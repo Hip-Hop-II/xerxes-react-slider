@@ -6,7 +6,7 @@ const App = ():React.Element => (
   <div>
     hello world1
     <div style={{width: '200px', margin: '50px'}}>
-      <Slider />
+      <Slider min={100} max={200} />
     </div>
   </div>
 )

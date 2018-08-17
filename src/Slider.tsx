@@ -21,8 +21,20 @@ class Slider extends React.PureComponent<ISliderProps> {
   //     return event.target === ReactDOM.findDOMNode(handles[key])
   //   })
   // }
-  state = {
-    value: this.props.value
+  constructor (props) {
+    super(props)
+    const {min, max, value} = props
+    let defaultValue = 0
+    if (value < min) {
+      defaultValue = min
+    } else if (value > max) {
+      defaultValue = max
+    } else {
+      defaultValue = value
+    }
+    this.state = {
+      value: defaultValue
+    }
   }
   public isNotTouchEvent (event: any):boolean {
     return event.touches.length > 1 || (event.type.toLowerCase() === 'touchend' && event.touches.length > 0)
@@ -47,13 +59,6 @@ class Slider extends React.PureComponent<ISliderProps> {
     // this.onStart(position)
     this.addDocumentTouchEvents()
   }
-  calcValueByPos (position:number):number {
-
-  }
-
-  public onStart (position: number):void {
-
-  }
   public addDocumentTouchEvents ():void {
     this.onTouchMoveListener = addEventListener(this.document, 'touchmove', this.onTouchMove)
     this.onTouchEndListener = addEventListener(this.document, 'touchend', this.onTouchEnd)
@@ -62,60 +67,65 @@ class Slider extends React.PureComponent<ISliderProps> {
     this.onTouchMoveListener && this.onTouchMoveListener.remove()
     this.onTouchEndListener && this.onTouchEndListener.remove()
   }
-  onTouchMove = (event):void => {
+  public onTouchMove = (event: any):void => {
     if (this.isNotTouchEvent(event) || !this.sliderRef) {
       return
     }
     const position = this.getTouchPosition(event)
     this.onMove(event, position - this.dragOffset)
   }
-  onMove (event, position) {
+  public onMove (event: any, position:number):void {
     event.stopPropagation()
     event.preventDefault()
+    console.log('position ===============', position)
     const value = this.calcValueByPos(position)
-    this.setState({value})
+    if (this.state.value !== value) {
+      this.setState({value: Math.ceil(value)})
+    } else {
+      return
+    }
   }
-  getSliderStart () {
+  public getSliderStart ():number {
     const slider = this.sliderRef;
     const rect = slider.getBoundingClientRect();
-
+    console.log('slider=======left', rect.left)
     return rect.left;
   }
-  getSliderLength () {
+  public getSliderLength ():number {
     const slider = this.sliderRef
       if (!slider) {
         return 0
       }
 
       const coords = slider.getBoundingClientRect()
+      console.log('coords.with ===============', coords.width)
       return coords.width
   }
-  calcValue (offset) {
+  public calcValue (offset:number):number {
     const {min, max} = this.props
-    const ratio = Math.abs(Math.max(offset, 0) / this.getSliderLength())
-    const value = ratio * (max - min) + min
+    let ratio = Math.abs(Math.max(offset, 0) / this.getSliderLength())
+    ratio = Math.min(ratio, 1)
+    const value = ratio > 1 ? ((max - min) + min) : (ratio * (max - min) + min)
     return value
   }
-  calcValueByPos (position) {
+  public calcValueByPos (position:number):number {
     const pixelOffset = position - this.getSliderStart()
     const nextValue = this.calcValue(pixelOffset)
     return nextValue
   }
-  calcOffset (value:number):number {
+  public calcOffset (value:number):number {
     const {min, max} = this.props
     const ratio = (value - min) / (max - min)
     return ratio * 100
   }
-  onTouchEnd = ():void=> {
+  public onTouchEnd = ():void=> {
     this.removeDocumentEvents()
-  }
-  componentDidUpdate () {
-    console.log('cccccc')
   }
   public componentDidMount ():void {
     this.document = this.sliderRef && this.sliderRef.ownerDocument
   }
   render (): React.Element {
+    console.log(this.state.value)
     const {disabled} = this.props
     const offset = this.calcOffset(this.state.value)
     return (
